@@ -3,6 +3,7 @@
 ## Time:20220421
 ## 20220705:add use jemalloc
 ## 20221026:add support ubuntu
+## 20221114:add support kylin
 set -eu
 
 # 无需配置，脚本使用全局变量
@@ -39,6 +40,9 @@ function InitGetOSMsg() {
     elif [ -f "/etc/issue" ] && [ "$(awk '{print $1}' /etc/issue)" = "Ubuntu" ]; then
         OS_NAME="Ubuntu"
         OS_VERSION="$(awk '{print $2}' /etc/issue | head -n 1)"
+    elif [ -f "/etc/kylin-release" ] && [ "$(awk '{print $1}' /etc/kylin-release)" = "Kylin" ]; then
+        OS_NAME="Kylin"
+        OS_VERSION="$(awk -F 'release ' '{print $2}' /etc/kylin-release | awk '{print $1}')"
     else
         EchoError "OS Not Support"
         exit 1
@@ -113,13 +117,26 @@ function PkgAddRepo() {
 }
 
 # 安装依赖包
-function YumInstall() {
+function CentOSYumInstall() {
     if [ "$(echo "$TENGINE_ADD_MODULE" | grep -c 'jemalloc')" -ne 0 ]; then
         PkgAddRepo
     fi
 
     EchoInfo "Install sys pkgs"
-    if ! yum install -y gcc zlib zlib-devel pcre-devel openssl openssl-devel; then
+    if ! yum install -y gcc zlib zlib-devel pcre-devel openssl openssl-devel tar; then
+        EchoError "Install sys pkgs faild"
+        exit 1
+    fi
+}
+
+function KylinYumInstall() {
+    if [ "$(echo "$TENGINE_ADD_MODULE" | grep -c 'jemalloc')" -ne 0 ]; then
+        EchoInfo "install jemalloc"
+        yum -y install jemalloc jemalloc-devel
+    fi
+
+    EchoInfo "Install sys pkgs"
+    if ! yum install -y gcc zlib zlib-devel pcre-devel openssl openssl-devel tar; then
         EchoError "Install sys pkgs faild"
         exit 1
     fi
@@ -132,7 +149,11 @@ function InstallSysPkgs() {
     fi
 
     if [ "$OS_NAME" = "CentOS" ] || [ "$OS_NAME" = "RedHat" ]; then
-        YumInstall
+        CentOSYumInstall
+    fi
+
+    if [ "$OS_NAME" = "Kylin" ]; then
+        KylinYumInstall
     fi
 
     if [ "$OS_NAME" = "Ubuntu" ]; then
