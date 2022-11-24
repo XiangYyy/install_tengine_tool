@@ -1,5 +1,5 @@
 # Tengine 安装脚本
-+ 支持 Centos/Ubuntu
++ 支持 Centos/Ubuntu/Kylin
 
 ## 配置文件说明(install_tengine.conf)
 + TENGINE_VERSION：要安装的 Tengine 版本
